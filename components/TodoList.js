@@ -172,6 +172,7 @@ const CompletedIcon = styled(ImCheckboxChecked)`
 
 const TodoList = () => {
   const [data, setData] = useState([]);
+  const [errorMessage, setErrorMessage] = useState("");
   const [singleTodo, setSingleTodo] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isCompleted, setCompleted] = useState(false);
@@ -218,13 +219,18 @@ const TodoList = () => {
   };
 
   const addTodo = async () => {
-    setLoading(true);
-    const newTodos = await axios.post(
-      "http://localhost:3001/todoItems",
-      newTodo
-    );
-    refetchData();
-    setLoading(false);
+    try {
+      setLoading(true);
+      const newTodos = await axios.post(
+        "http://localhost:3001/todoItems",
+        newTodo
+      );
+      refetchData();
+      setLoading(false);
+    } catch (err) {
+      setErrorMessage(err.response?.data.details[0].message);
+      console.log(errorMessage);
+    }
   };
 
   const handleId = (event) => {
@@ -268,12 +274,18 @@ const TodoList = () => {
   };
 
   const saveUpdate = async () => {
-    setLoading(true);
-    const updatedTodo = await axios.put(
-      `http://localhost:3001/todoItems/${currentContent.id}`,
-      currentContent
-    );
-    setLoading(false);
+    try {
+      setLoading(true);
+      const updatedTodo = await axios.put(
+        `http://localhost:3001/todoItems/${currentContent.id}`,
+        currentContent
+      );
+      setLoading(false);
+    } catch (err) {
+      setErrorMessage(err.response?.data.details[0].message);
+      setLoading(false);
+      setAll(false);
+    }
   };
 
   const deleteTodo = async (id) => {
@@ -300,6 +312,7 @@ const TodoList = () => {
               setAll(!all);
               setSingle(false);
               refetchData();
+              setErrorMessage("");
             }}
           >
             {all ? "Hide all" : "Display all"}
@@ -321,9 +334,10 @@ const TodoList = () => {
             </AddTodoBtn>
           </BtnLine>
         </BtnsContainer>
+        <p style={{ color: "red" }}>{errorMessage}</p>
 
         <ListContainer>
-          {loading && <div>Loading</div>}
+          {/* {loading && <div>Loading</div>} */}
           {all
             ? data.map((item, idx) => {
                 return (
@@ -366,7 +380,7 @@ const TodoList = () => {
               })
             : null}
 
-          {loading && <div>Loading</div>}
+          {/* {loading && <div>Loading</div>} */}
           {single ? (
             singleTodo.length !== 0 ? (
               <TodoContainer>
