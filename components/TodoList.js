@@ -1,8 +1,8 @@
 import React from "react";
 import styled from "styled-components";
-import { ImCheckboxUnchecked, ImCheckboxChecked } from "react-icons/im";
 import { useState, useEffect, useRef } from "react";
 import axios from "axios";
+import Todo from "./Todo";
 
 const Title = styled.h1``;
 
@@ -92,84 +92,6 @@ const ListContainer = styled.div`
   gap: 1rem;
 `;
 
-const TodoContainer = styled.div`
-  width: 250px;
-  height: 400px;
-  border-radius: 8px;
-  background-color: var(--main-color);
-  color: var(--text-color);
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  padding: 1rem;
-`;
-
-const TodoTextContent = styled.textarea`
-  flex: 3;
-  background-color: var(--accent-color);
-  padding: 1rem;
-  border-radius: 8px;
-  outline: none;
-  resize: none;
-  font: inherit;
-  color: inherit;
-`;
-
-const UpdateBtn = styled.button`
-  margin: 8px auto;
-  height: 40px;
-  color: inherit;
-  border: 2px solid var(--accent-color);
-  border-radius: 8px;
-  cursor: pointer;
-  background-color: inherit;
-  font-size: 1rem;
-  transition: all 0.3s ease;
-  font-weight: 600;
-
-  &:hover {
-    color: var(--hover-color);
-  }
-`;
-
-const DeleteBtn = styled.button`
-  margin: 8px auto;
-  font-weight: 600;
-  height: 40px;
-  color: inherit;
-  border: 2px solid var(--accent-color);
-  border-radius: 8px;
-  cursor: pointer;
-  background-color: inherit;
-  font-size: 1rem;
-  transition: all 0.3s ease;
-
-  &:hover {
-    color: var(--hover-color);
-  }
-`;
-
-const TodoId = styled.p`
-  font-weight: 700;
-  display: flex;
-  justify-content: flex-end;
-`;
-
-const CompletedContainer = styled.div`
-  width: 100%;
-  display: flex;
-  gap: 1rem;
-  justify-content: flex-end;
-`;
-
-const NotCompletedIcon = styled(ImCheckboxUnchecked)`
-  font-size: 1.5rem;
-`;
-
-const CompletedIcon = styled(ImCheckboxChecked)`
-  font-size: 1.5rem;
-`;
-
 const TodoList = () => {
   const [data, setData] = useState([]);
   const [errorMessage, setErrorMessage] = useState("");
@@ -180,43 +102,31 @@ const TodoList = () => {
   const [single, setSingle] = useState(false);
   const [id, setId] = useState(1);
   const [newTodo, setNewTodo] = useState({
-    id: 0,
     text: "",
-    isCompleted: false,
   });
   const [currentContent, setCurrentContent] = useState({
-    id: 0,
     text: "",
     isCompleted: false,
   });
   const [todoText, setTodoText] = useState("");
 
-  useEffect(() => {
-    const getAllData = async () => {
-      setLoading(true);
-      const todosData = await axios.get("http://localhost:3001/todoItems");
-      setData(todosData.data);
-      setLoading(false);
-    };
-
-    const getSingleTodo = async () => {
-      setLoading(true);
-      const todoData = await axios.get(`http://localhost:3001/todoItems/${id}`);
-      setSingleTodo(todoData.data);
-      setLoading(false);
-    };
-
-    getSingleTodo();
-
-    getAllData();
-  }, [id]);
-
-  const refetchData = async () => {
+  const fetchData = async () => {
     setLoading(true);
     const todosData = await axios.get("http://localhost:3001/todoItems");
     setData(todosData.data);
     setLoading(false);
   };
+
+  const getSingleTodo = async () => {
+    setLoading(true);
+    const todoData = await axios.get(`http://localhost:3001/todoItems/${id}`);
+    setSingleTodo(todoData.data);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, [id]);
 
   const addTodo = async () => {
     try {
@@ -225,12 +135,12 @@ const TodoList = () => {
         "http://localhost:3001/todoItems",
         newTodo
       );
-      refetchData();
-      setLoading(false);
+      fetchData();
     } catch (err) {
       setErrorMessage(err.response?.data.details[0].message);
       console.log(errorMessage);
     }
+    setLoading(false);
   };
 
   const handleId = (event) => {
@@ -239,62 +149,8 @@ const TodoList = () => {
 
   const handleText = (event) => {
     setNewTodo({
-      id: data.length + 1,
       text: event.target.value,
-      isCompleted: false,
     });
-  };
-
-  const getText = (event) => {
-    setTodoText(event.target.value);
-  };
-
-  const handleUpdate = (event) => {
-    let todoToUpdate = data.filter((todo) => todo.text === todoText);
-
-    setCurrentContent({
-      id: todoToUpdate[0].id,
-      text: event.target.value,
-      isCompleted: todoToUpdate[0].isCompleted,
-    });
-  };
-
-  const handleComplete = async (id, correctId) => {
-    setLoading(true);
-
-    const updatedTodo = await axios.put(
-      `http://localhost:3001/todoItems/${correctId}`,
-      {
-        id: data[id].id,
-        text: data[id].text,
-        isCompleted: !data[id].isCompleted,
-      }
-    );
-    setLoading(false);
-  };
-
-  const saveUpdate = async () => {
-    try {
-      setLoading(true);
-      const updatedTodo = await axios.put(
-        `http://localhost:3001/todoItems/${currentContent.id}`,
-        currentContent
-      );
-      setLoading(false);
-    } catch (err) {
-      setErrorMessage(err.response?.data.details[0].message);
-      setLoading(false);
-      setAll(false);
-    }
-  };
-
-  const deleteTodo = async (id) => {
-    setLoading(true);
-    const deletedTodo = await axios.delete(
-      `http://localhost:3001/todoItems/${id + 1}`
-    );
-    refetchData();
-    setLoading(false);
   };
 
   return (
@@ -311,7 +167,7 @@ const TodoList = () => {
             onClick={() => {
               setAll(!all);
               setSingle(false);
-              refetchData();
+              fetchData();
               setErrorMessage("");
             }}
           >
@@ -327,7 +183,8 @@ const TodoList = () => {
               onClick={() => {
                 setSingle(!single);
                 setAll(false);
-                refetchData();
+                getSingleTodo();
+                fetchData();
               }}
             >
               {single ? "Hide single to-do" : "Display single to-do"}
@@ -337,75 +194,15 @@ const TodoList = () => {
         <p style={{ color: "red" }}>{errorMessage}</p>
 
         <ListContainer>
-          {/* {loading && <div>Loading</div>} */}
           {all
-            ? data.map((item, idx) => {
-                return (
-                  <TodoContainer key={idx}>
-                    <TodoTextContent onChange={handleUpdate} onClick={getText}>
-                      {item.text}
-                    </TodoTextContent>
-                    <TodoId>{`ID: ${item.id}`}</TodoId>
-                    <CompletedContainer>
-                      Completed
-                      {item.isCompleted ? (
-                        <CompletedIcon
-                          onClick={() => {
-                            handleComplete(idx, item.id);
-                            refetchData();
-                          }}
-                        />
-                      ) : (
-                        <NotCompletedIcon
-                          onClick={() => {
-                            handleComplete(idx, item.id);
-                            refetchData();
-                          }}
-                        />
-                      )}
-                    </CompletedContainer>
-                    <div style={{ display: "flex" }}>
-                      <UpdateBtn onClick={() => saveUpdate()}>SAVE</UpdateBtn>
-                      <DeleteBtn
-                        onClick={() => {
-                          deleteTodo(idx);
-                          refetchData();
-                        }}
-                      >
-                        DELETE
-                      </DeleteBtn>
-                    </div>
-                  </TodoContainer>
-                );
+            ? data.map((item, map_idx) => {
+                return <Todo key={map_idx} item={item} todos={data} />;
               })
             : null}
 
-          {/* {loading && <div>Loading</div>} */}
           {single ? (
             singleTodo.length !== 0 ? (
-              <TodoContainer>
-                <TodoTextContent onChange={handleUpdate}>
-                  {singleTodo[0].text}
-                </TodoTextContent>
-                <TodoId>{`ID: ${singleTodo[0].id}`}</TodoId>
-                <CompletedContainer>
-                  Completed
-                  {isCompleted ? <CompletedIcon /> : <NotCompletedIcon />}
-                </CompletedContainer>
-                <div style={{ display: "flex" }}>
-                  <UpdateBtn onClick={() => saveUpdate()}>SAVE</UpdateBtn>
-                  <DeleteBtn
-                    onClick={() => {
-                      let idx = singleTodo[0].id - 1;
-                      deleteTodo(idx);
-                      setSingleTodo([]);
-                      refetchData();
-                    }}
-                  >
-                    DELETE
-                  </DeleteBtn>
-                </div>
-              </TodoContainer>
+              <Todo item={singleTodo[0]} />
             ) : (
               "No item to show"
             )
