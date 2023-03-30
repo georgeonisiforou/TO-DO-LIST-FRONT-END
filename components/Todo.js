@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useState } from "react";
 import styled from "styled-components";
 import axios from "axios";
@@ -82,24 +82,18 @@ const CompletedIcon = styled.input.attrs({ type: "checkbox" })`
   cursor: pointer;
 `;
 
-const Todo = ({ key, item, todos }) => {
-  const [data, setData] = useState(todos);
+const Todo = ({ item, refetchFunc }) => {
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [all, setAll] = useState(false);
-  const [newTodo, setNewTodo] = useState({
-    text: "",
-  });
   const [currentContent, setCurrentContent] = useState(item);
   const [todoText, setTodoText] = useState("");
 
-  const fetchData = async () => {
-    setLoading(true);
-    const todosData = await axios.get("http://localhost:3001/todoItems");
-    setCurrentContent(todosData);
-    setLoading(false);
-  };
+  useEffect(() => {
+    setCurrentContent(item);
+  }, [item]);
 
+  console.log(currentContent);
   const getText = (event) => {
     setTodoText(event.target.value);
     setErrorMessage("");
@@ -109,38 +103,23 @@ const Todo = ({ key, item, todos }) => {
     try {
       setLoading(true);
 
-      const updatedTodo = await axios.put(
-        `http://localhost:3001/todoItems/${todoId}`,
-        {
-          id: todoId,
+      const updatedTodo = await axios
+        .put(`http://localhost:3001/todoItems/${todoId}`, {
           text: todoText,
           isCompleted: checked,
-        }
-      );
-      setLoading(false);
-      setCurrentContent({
-        id: todoId,
-        text: todoText,
-        isCompleted: checked,
-      });
-    } catch (err) {
-      setErrorMessage(err.response?.data.details[0].message);
-      setLoading(false);
-      setAll(false);
-    }
-  };
+        })
+        .then((res) => res.data);
 
-  const saveUpdate = async () => {
-    try {
-      setLoading(true);
-      const updatedTodo = await axios.put(
-        `http://localhost:3001/todoItems/${currentContent.id}`,
-        currentContent
-      );
       setLoading(false);
-      fetchData();
+      // setCurrentContent(updatedTodo);
+      refetchFunc();
     } catch (err) {
-      setErrorMessage(err.response?.data.details[0].message);
+      console.log(err);
+      setErrorMessage(
+        err.response?.data?.details?.length > 0
+          ? err.response?.data?.details[0]?.message
+          : err.response.data
+      );
       setLoading(false);
       setAll(false);
     }
@@ -149,9 +128,9 @@ const Todo = ({ key, item, todos }) => {
   const deleteTodo = async (id) => {
     setLoading(true);
     const deletedTodo = await axios.delete(
-      `http://localhost:3001/todoItems/${id + 1}`
+      `http://localhost:3001/todoItems/${id}`
     );
-    fetchData();
+    refetchFunc();
     setLoading(false);
   };
 
@@ -166,7 +145,7 @@ const Todo = ({ key, item, todos }) => {
           {currentContent.text}
         </TodoTextContent>
 
-        <TodoId>{`ID: ${currentContent.id}`}</TodoId>
+        <TodoId>{`ID: ${currentContent._id}`}</TodoId>
         <CompletedContainer>
           Completed
           <CompletedIcon
@@ -174,7 +153,7 @@ const Todo = ({ key, item, todos }) => {
             onChange={(e) => {
               handleUpdate(
                 e.target.checked,
-                currentContent.id,
+                currentContent._id,
                 currentContent.text
               );
             }}
@@ -185,7 +164,7 @@ const Todo = ({ key, item, todos }) => {
             onClick={() =>
               handleUpdate(
                 currentContent.isCompleted,
-                currentContent.id,
+                currentContent._id,
                 todoText
               )
             }
@@ -194,8 +173,7 @@ const Todo = ({ key, item, todos }) => {
           </UpdateBtn>
           <DeleteBtn
             onClick={() => {
-              deleteTodo(key);
-              fetchData();
+              deleteTodo(item._id);
             }}
           >
             DELETE

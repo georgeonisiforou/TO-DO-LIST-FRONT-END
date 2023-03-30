@@ -97,18 +97,14 @@ const TodoList = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const [singleTodo, setSingleTodo] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [isCompleted, setCompleted] = useState(false);
   const [all, setAll] = useState(false);
   const [single, setSingle] = useState(false);
   const [id, setId] = useState(1);
   const [newTodo, setNewTodo] = useState({
     text: "",
   });
-  const [currentContent, setCurrentContent] = useState({
-    text: "",
-    isCompleted: false,
-  });
-  const [todoText, setTodoText] = useState("");
+
+  const ref = useRef();
 
   const fetchData = async () => {
     setLoading(true);
@@ -141,6 +137,7 @@ const TodoList = () => {
       console.log(errorMessage);
     }
     setLoading(false);
+    ref.current.value = "";
   };
 
   const handleId = (event) => {
@@ -159,7 +156,11 @@ const TodoList = () => {
         <Title>To-Do List</Title>
         <NewTodo>
           <h2>Add a new to-do</h2>
-          <TodoText placeholder="Add your text here..." onChange={handleText} />
+          <TodoText
+            placeholder="Add your text here..."
+            onChange={handleText}
+            ref={ref}
+          />
           <AddTodoBtn onClick={() => addTodo()}>Save</AddTodoBtn>
         </NewTodo>
         <BtnsContainer>
@@ -184,7 +185,7 @@ const TodoList = () => {
                 setSingle(!single);
                 setAll(false);
                 getSingleTodo();
-                fetchData();
+                // fetchData();
               }}
             >
               {single ? "Hide single to-do" : "Display single to-do"}
@@ -196,13 +197,15 @@ const TodoList = () => {
         <ListContainer>
           {all
             ? data.map((item, map_idx) => {
-                return <Todo key={map_idx} item={item} todos={data} />;
+                return (
+                  <Todo key={map_idx} item={item} refetchFunc={fetchData} />
+                );
               })
             : null}
 
           {single ? (
             singleTodo.length !== 0 ? (
-              <Todo item={singleTodo[0]} />
+              <Todo item={singleTodo} refetchFunc={fetchData} />
             ) : (
               "No item to show"
             )
